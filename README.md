@@ -37,6 +37,6 @@ Prevalence analysis is limited to diagnoses, not findings.
 Readmissions use inpatient encounters.
 
 ## Findings
-(To be added as the analysis is completed)
+
 
 ---
