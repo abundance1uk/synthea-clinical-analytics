@@ -37,4 +37,19 @@ Prevalence analysis is limited to diagnoses, not findings.
 Readmissions use inpatient encounters.
 
 ## Findings
-(To be added as the analysis is completed)
+### Chronic disease prevalence (n = 1,163 patients)
+| Condition | Patients | Prevalence |
+|---|---|---|
+| Prediabetes | 341 | 29.3% |
+| Hypertension | 292 | 25.1% |
+| Chronic sinusitis | 216 | 18.6% |
+| Hyperlipidemia | 138 | 11.9% |
+| Diabetes | 73 | 6.3% |
+
+- Cardiometabolic conditions dominate: prediabetes and hypertension
+  affect over a quarter of patients each.
+- 6.3% of patients have diabetes, but 29.3% have prediabetes. This is
+  a large group who could be targeted for prevention.
+- Prevalence = distinct patients with the condition / all patients.
+- Chronic conditions with very few cases (e.g. asthma, depression)
+  were left out because the sample was too small.

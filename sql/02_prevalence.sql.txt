@@ -1,0 +1,148 @@
+CREATE TABLE patients (
+  id TEXT PRIMARY KEY,
+  birthdate DATE,
+  deathdate DATE,
+  ssn TEXT, drivers TEXT, passport TEXT,
+  prefix TEXT, first TEXT, last TEXT, suffix TEXT, maiden TEXT,
+  marital TEXT, race TEXT, ethnicity TEXT, gender TEXT,
+  birthplace TEXT, address TEXT, city TEXT, state TEXT,
+  county TEXT, fips TEXT, zip TEXT,
+  lat NUMERIC, lon NUMERIC,
+  healthcare_expenses NUMERIC, healthcare_coverage NUMERIC,
+  income NUMERIC
+);
+
+CREATE TABLE encounters (
+  id TEXT PRIMARY KEY,
+  start_ts TIMESTAMPTZ,
+  stop_ts TIMESTAMPTZ,
+  patient TEXT,
+  organization TEXT,
+  provider TEXT,
+  payer TEXT,
+  encounterclass TEXT,
+  code TEXT,
+  description TEXT,
+  base_encounter_cost NUMERIC,
+  total_claim_cost NUMERIC,
+  payer_coverage NUMERIC,
+  reasoncode TEXT,
+  reasondescription TEXT
+);
+
+CREATE TABLE conditions (
+  start_date DATE,
+  stop_date DATE,
+  patient TEXT,
+  encounter TEXT,
+  code TEXT,
+  description TEXT
+);
+
+DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS encounters;
+
+CREATE TABLE patients (
+  id TEXT PRIMARY KEY,
+  birthdate DATE,
+  deathdate DATE,
+  ssn TEXT, drivers TEXT, passport TEXT,
+  prefix TEXT, first TEXT, last TEXT, suffix TEXT, maiden TEXT,
+  marital TEXT, race TEXT, ethnicity TEXT, gender TEXT,
+  birthplace TEXT, address TEXT, city TEXT, state TEXT,
+  county TEXT, zip TEXT,
+  lat NUMERIC, lon NUMERIC,
+  healthcare_expenses NUMERIC,
+  healthcare_coverage NUMERIC
+);
+
+CREATE TABLE encounters (
+  id TEXT PRIMARY KEY,
+  start_ts TIMESTAMPTZ,
+  stop_ts TIMESTAMPTZ,
+  patient TEXT,
+  organization TEXT,
+  provider TEXT,
+  payer TEXT,
+  encounterclass TEXT,
+  code TEXT,
+  description TEXT,
+  base_encounter_cost NUMERIC,
+  total_claim_cost NUMERIC,
+  payer_coverage NUMERIC,
+  reasoncode TEXT,
+  reasondescription TEXT
+);
+
+
+SELECT COUNT(*) FROM patients;
+SELECT COUNT(*) FROM encounters;
+SELECT COUNT(*) FROM conditions;
+
+SELECT COUNT(*) FROM encounters e
+LEFT JOIN patients p ON e.patient = p.id
+WHERE p.id IS NULL;
+
+SELECT COUNT(*) FROM conditions c
+LEFT JOIN patients p ON c.patient = p.id
+WHERE p.id IS NULL;
+
+SELECT COUNT(*) FROM encounters WHERE stop_ts < start_ts;
+SELECT COUNT(*) FROM conditions WHERE stop_date < start_date;
+
+SELECT
+  COUNT(*) FILTER (WHERE birthdate IS NULL) AS no_birthdate,
+  COUNT(*) FILTER (WHERE gender IS NULL) AS no_gender,
+  COUNT(*) FILTER (WHERE deathdate IS NOT NULL) AS deceased
+FROM patients;
+
+SELECT encounterclass, COUNT(*) 
+FROM encounters
+GROUP BY encounterclass
+ORDER BY 2 DESC;
+
+SELECT description, COUNT(*) AS n
+FROM conditions
+GROUP BY description
+ORDER BY n DESC
+LIMIT 25;
+
+SELECT description, COUNT(DISTINCT patient) AS patients
+FROM conditions
+WHERE description NOT LIKE '%(finding)%'
+  AND description NOT LIKE '%(situation)%'
+GROUP BY description
+ORDER BY patients DESC
+LIMIT 40;
+
+SELECT description, COUNT(DISTINCT patient) AS patients
+FROM conditions
+WHERE description ILIKE ANY (ARRAY[
+  '%asthma%','%copd%','%chronic obstructive%','%kidney disease%',
+  '%alzheimer%','%dementia%','%cancer%','%carcinoma%','%depress%',
+  '%epilepsy%','%arthritis%','%bronchitis (disorder)%'])
+GROUP BY description
+ORDER BY patients DESC;
+
+WITH chronic AS (
+  SELECT DISTINCT patient, description
+  FROM conditions
+  WHERE description IN (
+    'Hypertension', 'Diabetes', 'Prediabetes', 'Hyperlipidemia',
+    'Hypertriglyceridemia (disorder)', 'Metabolic syndrome X (disorder)',
+    'Coronary Heart Disease', 'Chronic congestive heart failure (disorder)',
+    'Atrial Fibrillation', 'Stroke', 'Osteoporosis (disorder)',
+    'Osteoarthritis of knee', 'Seizure disorder', 'Chronic pain',
+    'Chronic intractable migraine without aura', 'Chronic sinusitis (disorder)'
+  )
+),
+total AS (
+  SELECT COUNT(*) AS n FROM patients
+)
+SELECT c.description,
+       COUNT(*) AS patients,
+       ROUND(100.0 * COUNT(*) / t.n, 1) AS prevalence_pct
+FROM chronic c
+CROSS JOIN total t
+GROUP BY c.description, t.n
+ORDER BY patients DESC;
