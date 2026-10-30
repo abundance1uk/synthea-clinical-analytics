@@ -106,3 +106,5 @@ FROM conditions
 GROUP BY description
 ORDER BY n DESC
 LIMIT 25;
+
+| Encounters with missing start or stop time | 0 |
