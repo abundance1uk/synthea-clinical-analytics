@@ -1,0 +1,39 @@
+WITH living AS (
+  SELECT id, gender,
+    DATE_PART('year', AGE(DATE '2021-11-01', birthdate))::int AS age
+  FROM patients
+  WHERE deathdate IS NULL
+),
+grouped AS (
+  SELECT id, gender,
+    CASE
+      WHEN age < 18 THEN '0-17'
+      WHEN age < 40 THEN '18-39'
+      WHEN age < 65 THEN '40-64'
+      ELSE '65+'
+    END AS age_group
+  FROM living
+),
+chronic AS (
+  SELECT DISTINCT patient, description
+  FROM conditions
+  WHERE description IN (
+    'Hypertension', 'Diabetes', 'Prediabetes', 'Hyperlipidemia',
+    'Coronary Heart Disease', 'Osteoporosis (disorder)',
+    'Osteoarthritis of knee', 'Stroke'
+  )
+),
+denominators AS (
+  SELECT age_group, gender, COUNT(*) AS group_size
+  FROM grouped
+  GROUP BY age_group, gender
+)
+SELECT g.age_group, g.gender, c.description,
+       COUNT(*) AS patients,
+       d.group_size,
+       ROUND(100.0 * COUNT(*) / d.group_size, 1) AS prevalence_pct
+FROM grouped g
+JOIN chronic c ON c.patient = g.id
+JOIN denominators d ON d.age_group = g.age_group AND d.gender = g.gender
+GROUP BY g.age_group, g.gender, c.description, d.group_size
+ORDER BY c.description, g.age_group, g.gender;

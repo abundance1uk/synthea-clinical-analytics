@@ -1,55 +1,108 @@
-# Synthea Clinical Analytics Project
+CREATE TABLE patients (
+  id TEXT PRIMARY KEY,
+  birthdate DATE,
+  deathdate DATE,
+  ssn TEXT, drivers TEXT, passport TEXT,
+  prefix TEXT, first TEXT, last TEXT, suffix TEXT, maiden TEXT,
+  marital TEXT, race TEXT, ethnicity TEXT, gender TEXT,
+  birthplace TEXT, address TEXT, city TEXT, state TEXT,
+  county TEXT, fips TEXT, zip TEXT,
+  lat NUMERIC, lon NUMERIC,
+  healthcare_expenses NUMERIC, healthcare_coverage NUMERIC,
+  income NUMERIC
+);
 
-## Objective
-Analyse synthetic patient records to measure chronic disease prevalence,
-30-day readmissions, and comorbidity patterns using PostgreSQL.
+CREATE TABLE encounters (
+  id TEXT PRIMARY KEY,
+  start_ts TIMESTAMPTZ,
+  stop_ts TIMESTAMPTZ,
+  patient TEXT,
+  organization TEXT,
+  provider TEXT,
+  payer TEXT,
+  encounterclass TEXT,
+  code TEXT,
+  description TEXT,
+  base_encounter_cost NUMERIC,
+  total_claim_cost NUMERIC,
+  payer_coverage NUMERIC,
+  reasoncode TEXT,
+  reasondescription TEXT
+);
 
-## Questions
-1. Which chronic conditions are most common, and in which age and gender groups?
-2. What is the 30-day readmission rate, and who is most at risk?
-3. Which conditions occur together most often?
+CREATE TABLE conditions (
+  start_date DATE,
+  stop_date DATE,
+  patient TEXT,
+  encounter TEXT,
+  code TEXT,
+  description TEXT
+);
 
-## Data
-- Source: Synthea sample dataset (CSV, Nov 2021), https://synthea.mitre.org/downloads
-- Synthetic data only. No real patients.
-- Tables used: patients (1,163), encounters (61,459), conditions (76,188)
-- Data files are not in this repo. Download from the link above into /data.
+DROP TABLE IF EXISTS patients;
+DROP TABLE IF EXISTS encounters;
 
-## Tools
-PostgreSQL, DBeaver, GitHub
+CREATE TABLE patients (
+  id TEXT PRIMARY KEY,
+  birthdate DATE,
+  deathdate DATE,
+  ssn TEXT, drivers TEXT, passport TEXT,
+  prefix TEXT, first TEXT, last TEXT, suffix TEXT, maiden TEXT,
+  marital TEXT, race TEXT, ethnicity TEXT, gender TEXT,
+  birthplace TEXT, address TEXT, city TEXT, state TEXT,
+  county TEXT, zip TEXT,
+  lat NUMERIC, lon NUMERIC,
+  healthcare_expenses NUMERIC,
+  healthcare_coverage NUMERIC
+);
 
-## Data quality checks
-| Check | Result |
-|---|---|
-| Encounters with no matching patient | 0 |
-| Conditions with no matching patient | 0 |
-| Encounters ending before they start | 0 |
-| Conditions ending before they start | 0 |
-| Patients missing birthdate or gender | 0 |
-| Deceased patients | 163 |
+CREATE TABLE encounters (
+  id TEXT PRIMARY KEY,
+  start_ts TIMESTAMPTZ,
+  stop_ts TIMESTAMPTZ,
+  patient TEXT,
+  organization TEXT,
+  provider TEXT,
+  payer TEXT,
+  encounterclass TEXT,
+  code TEXT,
+  description TEXT,
+  base_encounter_cost NUMERIC,
+  total_claim_cost NUMERIC,
+  payer_coverage NUMERIC,
+  reasoncode TEXT,
+  reasondescription TEXT
+);
 
-Encounter types: wellness 24,038; ambulatory 20,124; outpatient 10,837;
-urgent care 2,564; emergency 2,168; inpatient 1,728.
 
-Finding: the conditions table mixes diseases with social findings
-(e.g. "Full-time employment (finding)", "Stress (finding)").
-Prevalence analysis is limited to diagnoses, not findings.
-Readmissions use inpatient encounters.
+SELECT COUNT(*) FROM patients;
+SELECT COUNT(*) FROM encounters;
+SELECT COUNT(*) FROM conditions;
 
-## Findings
-### Chronic disease prevalence (n = 1,163 patients)
-| Condition | Patients | Prevalence |
-|---|---|---|
-| Prediabetes | 341 | 29.3% |
-| Hypertension | 292 | 25.1% |
-| Chronic sinusitis | 216 | 18.6% |
-| Hyperlipidemia | 138 | 11.9% |
-| Diabetes | 73 | 6.3% |
+SELECT COUNT(*) FROM encounters e
+LEFT JOIN patients p ON e.patient = p.id
+WHERE p.id IS NULL;
 
-- Cardiometabolic conditions dominate: prediabetes and hypertension
-  affect over a quarter of patients each.
-- 6.3% of patients have diabetes, but 29.3% have prediabetes. This is
-  a large group who could be targeted for prevention.
-- Prevalence = distinct patients with the condition / all patients.
-- Chronic conditions with very few cases (e.g. asthma, depression)
-  were left out because the sample was too small.
+SELECT COUNT(*) FROM conditions c
+LEFT JOIN patients p ON c.patient = p.id
+WHERE p.id IS NULL;
+
+SELECT COUNT(*) FROM encounters WHERE stop_ts < start_ts;
+SELECT COUNT(*) FROM conditions WHERE stop_date < start_date;
+
+SELECT
+  COUNT(*) FILTER (WHERE birthdate IS NULL) AS no_birthdate,
+  COUNT(*) FILTER (WHERE gender IS NULL) AS no_gender,
+  COUNT(*) FILTER (WHERE deathdate IS NOT NULL) AS deceased
+FROM patients;
+
+SELECT encounterclass, COUNT(*) 
+FROM encounters
+GROUP BY encounterclass
+ORDER BY 2 DESC;
+
+SELECT description, COUNT(*) AS n
+FROM conditions
+GROUP BY description
+ORDER BY n DESC
+LIMIT 25;
