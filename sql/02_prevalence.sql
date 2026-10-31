@@ -1,3 +1,12 @@
+-- 02_prevalence.sql
+-- Question: which chronic conditions are most common?
+-- Method: CTE of distinct patient-condition pairs, divided by all patients
+-- Note: prevalence = patients with condition / all 1,163 patients (including deceased)
+-- Note: short-term illnesses (sinusitis, bronchitis, sprains) and pregnancy are excluded
+
+-- chronic: one row per patient per chronic condition (DISTINCT avoids double counting)
+-- total: number of all patients, used as the denominator
+
 SELECT description, COUNT(DISTINCT patient) AS patients
 FROM conditions
 WHERE description NOT LIKE '%(finding)%'
@@ -14,15 +23,6 @@ WHERE description ILIKE ANY (ARRAY[
   '%epilepsy%','%arthritis%','%bronchitis (disorder)%'])
 GROUP BY description
 ORDER BY patients DESC;
-
--- 02_prevalence.sql
--- Question: which chronic conditions are most common?
--- Method: CTE of distinct patient-condition pairs, divided by all patients
--- Note: prevalence = patients with condition / all 1,163 patients (including deceased)
--- Note: short-term illnesses (sinusitis, bronchitis, sprains) and pregnancy are excluded
-
--- chronic: one row per patient per chronic condition (DISTINCT avoids double counting)
--- total: number of all patients, used as the denominator
 
 WITH chronic AS (
   SELECT DISTINCT patient, description
