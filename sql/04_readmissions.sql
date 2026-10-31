@@ -1,3 +1,15 @@
+-- 04_readmissions.sql
+-- Question: what is the 30-day inpatient readmission rate?
+-- Method: LAG() finds each patient's previous inpatient discharge
+-- Definition: readmission = stay starting more than 1 day and up to 30 days
+--             after the previous discharge
+-- Data check: of 567 stays within 30 days, 118 overlapped the previous stay and
+--             138 began within 1 day. These were treated as continuations
+--             (transfers), leaving 311 readmissions (18.0% of 1,728 stays).
+
+-- stays: inpatient encounters with the previous stay's end time (LAG)
+-- flagged: marks readmissions with CASE
+
 WITH stays AS (
   SELECT patient, id, start_ts, stop_ts,
          LAG(stop_ts) OVER (PARTITION BY patient ORDER BY start_ts) AS prev_stop

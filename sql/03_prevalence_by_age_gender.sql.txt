@@ -1,3 +1,14 @@
+-- 03_prevalence_by_age_gender.sql
+-- Question: how does chronic disease prevalence differ by age and gender?
+-- Method: CASE age bands + per-group denominators
+-- Note: living patients only (n = 1,000). Age is calculated at 2021-11-01
+--       because the dataset ends in late 2021.
+
+-- living: living patients and their age
+-- grouped: assigns each patient to an age band (0-17, 18-39, 40-64, 65+)
+-- chronic: selected chronic conditions, one row per patient per condition
+-- denominators: group sizes, so % means "of people in that group"
+
 WITH living AS (
   SELECT id, gender,
     DATE_PART('year', AGE(DATE '2021-11-01', birthdate))::int AS age

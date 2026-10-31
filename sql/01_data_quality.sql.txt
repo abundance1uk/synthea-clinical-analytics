@@ -1,3 +1,15 @@
+-- 01_data_quality.sql
+-- Question: is the data complete and consistent enough to analyse?
+-- Checks: orphan records, invalid dates, missing values, encounter types,
+--         most common condition descriptions
+-- Expected: 0 orphans, 0 bad dates, 0 missing start/stop times
+
+-- 1. Orphan records (encounters or conditions with no matching patient)
+-- 2. Dates where the end is before the start
+-- 3. Missing values
+-- 4. Encounter types
+-- 5. Top condition descriptions (shows the data mixes diseases with social "findings")
+
 CREATE TABLE patients (
   id TEXT PRIMARY KEY,
   birthdate DATE,
@@ -107,4 +119,3 @@ GROUP BY description
 ORDER BY n DESC
 LIMIT 25;
 
-| Encounters with missing start or stop time | 0 |
